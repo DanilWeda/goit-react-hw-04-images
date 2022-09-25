@@ -1,60 +1,64 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import ImageGallery from "./ImageGallery/ImageGallery";
 import Searchbar from "./Searchbar/Searchbar";
 
-export class App extends Component {
+const App = () => {
+  const [cards, setCards] = useState([])
+  const [search, setSearch] = useState('')
+  const [loading, setloading] = useState(false)
+  const [activePage, setActivePage] = useState(1)
+  const [loadMore, setloadMore] = useState(true)
 
-  constructor() {
-    super();
-
-    this.state = {
-      cards: [],
-      search: '',
-      loading: true,
-      activePage: 1,
-      loadMore: true
-    };
+  const handleSearch = (query) => {
+    setSearch(query)
   }
 
-  handleSearch = (query) => {
-    this.setState({ search: query })
-  }
-
-  handleClick = (e) => {
+  const handleClick = (e) => {
     e.preventDefault()
-    this.setState({ cards: [], activePage: 1 }, () => this.fetchImage())
+    setActivePage(() => 1)
+    fetchImage(true)
   }
 
-  handleLoadMore = () => {
-    this.setState({ activePage: this.state.activePage + 1 }, () => this.fetchImage())
+  const handleLoadMore = () => {
+    setActivePage(activePage + 1)
   }
 
-  fetchImage = async () => {
-    this.setState({ loading: true, loadMore: true })
-    const data = await fetch(`https://pixabay.com/api/?q=${this.state.search}&page=${this.state.activePage}&key=30121115-c667935687fc10659155cfe05&image_type=photo&orientation=horizontal&per_page=12`)
+  const fetchImage = async (newQuery) => {
+    const page = newQuery ? 1 : activePage
+    setloading(true)
+    setloadMore(true)
+    const data = await fetch(`https://pixabay.com/api/?q=${search}&page=${page}&key=30121115-c667935687fc10659155cfe05&image_type=photo&orientation=horizontal&per_page=12`)
     const { hits } = await data.json()
-    if (hits.length < 12 || !hits.length) this.setState({ loadMore: false })
-    this.setState({ cards: [...this.state.cards, ...hits], loading: false })
-  }
-
-  componentDidUpdate(prevState) {
-    if (prevState.cards !== this.state.cards) {
-      const yOffset = window.pageYOffset;
-      window.scroll({
-        top: yOffset + 1000,
-        behavior: 'smooth'
-      })
+    setloading(false)
+    if (hits.length < 12 || !hits.length) setloadMore(false)
+    if (newQuery) {
+      setCards([...hits])
+      return
     }
+    setCards([...cards, ...hits])
   }
 
+  useEffect(() => {
+    const yOffset = window.pageYOffset;
+    window.scroll({
+      top: yOffset + 1000,
+      behavior: 'smooth'
+    })
+  }, [cards])
 
-  render() {
-    const { loading, loadMore, cards } = this.state
+  useEffect(() => {
+    if (activePage > 1) {
+      fetchImage()
+      return
+    }
+  }, [activePage])
+
     return (
       <div>
-        <Searchbar handleClick={this.handleClick} search={this.state.search} handleSearch={this.handleSearch} />
-        {!!this.state.cards.length && <ImageGallery loading={loading} loadMore={loadMore} cards={cards} handleClick={this.handleLoadMore} />}
+        <Searchbar handleClick={handleClick} search={search} handleSearch={handleSearch} />
+        {!!cards.length && <ImageGallery loading={loading} loadMore={loadMore} cards={cards} handleClick={handleLoadMore} />}
       </div >
     )
-  }
 };
+
+export default App

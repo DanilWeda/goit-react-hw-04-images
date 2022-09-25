@@ -1,34 +1,20 @@
 import PropTypes from 'prop-types'
-import React, { Component } from 'react'
+import { useEffect } from 'react'
 import classes from './Modal.module.css'
 
-export default class Modal extends Component {
-  static propTypes = {
-    onClose: PropTypes.func.isRequired,
-    largeImage: PropTypes.string.isRequired
-  }
+const Modal = ({ onClose, largeImage }) => {
 
-  constructor(props) {
-    super(props);
-    this.escClose = this.escClose.bind(this);
-  }
-
-  escClose = (e) => {
+  const escClose = (e) => {
     if (e.key === "Escape") {
-      this.props.onClose(e)
+      onClose(e)
     }
   }
 
-  componentDidMount() {
-    document.addEventListener("keydown", this.escClose);
-  }
+  useEffect(() => {
+    document.addEventListener("keydown", escClose)
+    return () => document.removeEventListener("keydown", escClose)
+  }, [])
 
-  componentWillUnmount() {
-    document.removeEventListener("keydown", this.escClose);
-  }
-
-  render() {
-    const { onClose, largeImage } = this.props
     return (
       <div onClick={onClose} className={classes.overlay}>
         <div className={classes.modal}>
@@ -36,6 +22,11 @@ export default class Modal extends Component {
         </div>
       </div>
     )
-  }
 }
 
+Modal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  largeImage: PropTypes.string.isRequired
+}
+
+export default Modal
